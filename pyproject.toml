@@ -5,9 +5,12 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "llama-index-llms-openrouter>=0.3.2",
+    "llama-index-llms-together>=0.3.2",
     "llama-index>=0.12.52",
     "pandas>=2.2.3",
     "polars>=1.31.0",
+    "pydantic-settings>=2.10.1",
     "rich>=14.1.0",
 ]
 

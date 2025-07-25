@@ -1,0 +1,20 @@
+[project]
+name = "rag-tutorials"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "llama-index>=0.12.52",
+    "pandas>=2.2.3",
+    "polars>=1.31.0",
+    "rich>=14.1.0",
+]
+
+[dependency-groups]
+dev = [
+    "nb-black-formatter>=1.0.1",
+    "pytest>=8.4.1",
+    "requests-mock>=1.12.1",
+    "ruff>=0.12.5",
+]

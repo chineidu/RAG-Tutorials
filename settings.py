@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from dotenv import load_dotenv
-from pydantic import SecretStr
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from dotenv import load_dotenv  # type: ignore
+from pydantic import SecretStr  # type: ignore
+from pydantic_settings import BaseSettings, SettingsConfigDict  # type: ignore
 
 
 class BaseSettingsConfig(BaseSettings):
@@ -37,6 +37,7 @@ class Settings(BaseSettingsConfig):
 
     # TOGETHER AI
     TOGETHER_API_KEY: SecretStr = SecretStr("")
+    TOGETHER_API_URL: str = "https://api.together.xyz/v1"
 
     # LANGFUSE
     LANGFUSE_SECRET_KEY: SecretStr = SecretStr("")

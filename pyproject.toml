@@ -5,19 +5,23 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "llama-index-embeddings-ollama>=0.6.0",
     "llama-index-embeddings-together>=0.3.0",
     "llama-index-llms-openrouter>=0.3.2",
     "llama-index-llms-together>=0.3.2",
+    "llama-index-vector-stores-qdrant>=0.6.1",
     "llama-index>=0.12.52",
     "pandas>=2.2.3",
     "polars>=1.31.0",
     "pydantic-settings>=2.10.1",
+    "qdrant-client>=1.15.0",
     "rich>=14.1.0",
     "together>=1.5.21",
 ]
 
 [dependency-groups]
 dev = [
+    "jupyter>=1.1.1",
     "nb-black-formatter>=1.0.1",
     "pytest>=8.4.1",
     "requests-mock>=1.12.1",

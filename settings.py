@@ -54,6 +54,9 @@ class Settings(BaseSettingsConfig):
     # HUGGINGFACE
     HUGGINGFACE_API_KEY: SecretStr = SecretStr("")
 
+    # LLAMA CLOUD
+    LLAMA_CLOUD_API_KEY: SecretStr = SecretStr("")
+
 
 def refresh_settings() -> Settings:
     """Refresh environment variables and return new Settings instance.

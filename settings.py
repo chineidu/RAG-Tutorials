@@ -39,11 +39,6 @@ class Settings(BaseSettingsConfig):
     TOGETHER_API_KEY: SecretStr = SecretStr("")
     TOGETHER_API_URL: str = "https://api.together.xyz/v1"
 
-    # LANGFUSE
-    LANGFUSE_SECRET_KEY: SecretStr = SecretStr("")
-    LANGFUSE_PUBLIC_KEY: SecretStr = SecretStr("")
-    LANGFUSE_HOST: str = "https://cloud.langfuse.com"
-
     # OPENROUTER
     OPENROUTER_API_KEY: SecretStr = SecretStr("")
     OPENROUTER_URL: str = "https://openrouter.ai/api/v1"
@@ -56,6 +51,18 @@ class Settings(BaseSettingsConfig):
 
     # LLAMA CLOUD
     LLAMA_CLOUD_API_KEY: SecretStr = SecretStr("")
+
+    # ===== OBSERVABILITY =====
+    # LANGFUSE
+    LANGFUSE_SECRET_KEY: SecretStr = SecretStr("")
+    LANGFUSE_PUBLIC_KEY: SecretStr = SecretStr("")
+    LANGFUSE_HOST: str = "https://cloud.langfuse.com"
+
+    # LANGFUSE
+    LANGCHAIN_API_KEY: SecretStr = SecretStr("")
+    LANGCHAIN_TRACING_V2: bool = True
+    LANGCHAIN_ENDPOINT: str = "https://api.smith.langchain.com"
+    LANGCHAIN_PROJECT: str = "RAG-Tutorials"
 
 
 def refresh_settings() -> Settings:

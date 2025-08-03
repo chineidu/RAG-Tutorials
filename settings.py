@@ -52,6 +52,9 @@ class Settings(BaseSettingsConfig):
     # LLAMA CLOUD
     LLAMA_CLOUD_API_KEY: SecretStr = SecretStr("")
 
+    # TAVILY
+    TAVILY_API_KEY: SecretStr = SecretStr("")
+
     # ===== OBSERVABILITY =====
     # LANGFUSE
     LANGFUSE_SECRET_KEY: SecretStr = SecretStr("")

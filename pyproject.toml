@@ -11,6 +11,7 @@ dependencies = [
     "langchain-core>=0.3.72",
     "langchain-google-vertexai>=2.0.27",
     "langchain-openai>=0.3.28",
+    "langchain-tavily>=0.2.11",
     "langsmith>=0.4.8",
     "llama-index-embeddings-ollama>=0.6.0",
     "llama-index-embeddings-together>=0.3.0",

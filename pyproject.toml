@@ -35,7 +35,14 @@ dev = [
     "black>=25.1.0",
     "jupyter>=1.1.1",
     "nb-black-formatter>=1.0.1",
+    "pyrefly>=0.27.0",
     "pytest>=8.4.1",
     "requests-mock>=1.12.1",
     "ruff>=0.12.5",
 ]
+
+[tool.pyrefly]
+project-includes = ["src"]
+project-excludes = ["**/.[!/.]*", "**/*venv/**"]
+ignore-missing-source = true
+

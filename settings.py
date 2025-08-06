@@ -67,6 +67,11 @@ class Settings(BaseSettingsConfig):
     LANGCHAIN_ENDPOINT: str = "https://api.smith.langchain.com"
     LANGCHAIN_PROJECT: str = "RAG-Tutorials"
 
+    # ===== VECTOR STORE =====
+    # Qdrant
+    QDRANT_URL: str = "http://localhost:6333"
+    QDRANT_API_KEY: SecretStr = SecretStr("")
+
 
 def refresh_settings() -> Settings:
     """Refresh environment variables and return new Settings instance.

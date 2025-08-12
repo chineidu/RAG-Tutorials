@@ -34,3 +34,5 @@ class RemoteModel(str, Enum):
     GPT_OSS_120B = "openai/gpt-oss-120b"
     LLAMA_3_3_70B_INSTRUCT = "meta-llama/llama-3.3-70b-instruct"
     GPT_5_NANO = "openai/gpt-5-nano"
+    LLAMA_3_8B_INSTRUCT = "meta-llama/llama-3-8b-instruct"
+    MISTRAL_SMALL_3_2_24B_INSTRUCT = "mistralai/mistral-small-3.2-24b-instruct"

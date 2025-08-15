@@ -36,3 +36,7 @@ class RemoteModel(str, Enum):
     GPT_5_NANO = "openai/gpt-5-nano"
     LLAMA_3_8B_INSTRUCT = "meta-llama/llama-3-8b-instruct"
     MISTRAL_SMALL_3_2_24B_INSTRUCT = "mistralai/mistral-small-3.2-24b-instruct"
+    MISTRAL_7B_INSTRUCT_V0_3 = "mistralai/mistral-7b-instruct-v0.3"
+    NOUS_RESEARCH_HERMES_2_PRO_LLAMA_3_8B = "nousresearch/hermes-2-pro-llama-3-8b"
+    Z_AI_GLM_4_5_AIR_FREE = "z-ai/glm-4.5-air:free"
+    MISTRAL_SMALL_3_2_24B_INSTRUCT_FREE = "mistralai/mistral-small-3.2-24b-instruct:free"

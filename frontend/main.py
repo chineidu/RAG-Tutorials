@@ -23,8 +23,8 @@ from model_config import LocalModel, RemoteModel
 from settings import refresh_settings
 
 settings = refresh_settings()
-
-model_str_remote: str = RemoteModel.GPT_OSS_120B
+# openai/gpt-oss-120b
+model_str_remote: str = RemoteModel.KIMI_K2
 model_str_local: str = LocalModel.MISTRAL_7B_INSTRUCT_V0_3_Q4_0
 
 # Deterministic responses
@@ -58,24 +58,35 @@ def get_document_splits(filepath: str) -> list[Any]:
 def get_vector_store(splits: list[Any], collection_name: str) -> VectorStoreRetriever:
     """Create a vector store retriever from document splits."""
     emb_model = OllamaEmbeddings(
-        model=LocalModel.MXBAI_EMBED_LARGE.value,
+        model=LocalModel.MXBAI_EMBED_LARGE,
     )
     emb = emb_model.embed_documents(["Hello world"])
     emb_size: int = len(emb[0])
 
     client = QdrantClient(url=settings.QDRANT_URL)
-    client.recreate_collection(
-        collection_name=collection_name,
-        vectors_config=VectorParams(size=emb_size, distance=Distance.COSINE),
-    )
+    collection_exists_flag: bool = client.collection_exists(collection_name=collection_name)
 
-    # Vector store
-    vector_store = QdrantVectorStore.from_documents(
-        documents=splits,
-        embedding=emb_model,
-        collection_name=collection_name,
-        ids=[str(uuid4()) for _ in range(len(splits))],
-    )
+    if not collection_exists_flag:
+        client = QdrantClient(url=settings.QDRANT_URL)
+        client.create_collection(
+            collection_name=collection_name,
+            vectors_config=VectorParams(size=emb_size, distance=Distance.COSINE),
+        )
+
+        # Vector store
+        vector_store: QdrantVectorStore = QdrantVectorStore.from_documents(
+            documents=splits,
+            embedding=emb_model,
+            collection_name=collection_name,
+            ids=[str(uuid4()) for _ in range(len(splits))],
+        )
+    else:
+        vector_store = QdrantVectorStore.from_existing_collection(
+            embedding=emb_model,
+            collection_name=collection_name,
+            url=settings.QDRANT_URL,
+        )
+
     return vector_store.as_retriever(search_kwargs={"k": 3})
 
 
@@ -88,7 +99,7 @@ def get_rag_fusion_generator(llm: ChatOpenAI) -> RunnableSerializable[dict, Any]
     </role>
 
     <instructions>
-    Generate a max of 4 search queries related to the question
+    Generate a max of 3 search queries related to the question
     <question>{question}</question>
     </instructions>
 
@@ -130,10 +141,23 @@ def get_final_rag_pipeline(retrieval_chain: Any, llm: ChatOpenAI) -> RunnableSer
     # RAG Prompt
     rag_template: str = """
     <instructions>
-    Answer the following question based on this context:
+    You are a helpful AI assistant. Answer the following question based primarily on the provided context.
+    
     <context>{context}</context>
     <question>{question}</question>
+    
+    If the context doesn't contain relevant information, you may use your general knowledge to provide a 
+    helpful response.
     </instructions>
+
+    <guidelines>
+    - Prioritize information from the provided context when available
+    - Keep responses concise (maximum 3 sentences unless the user requests more detail)
+    - Be accurate and relevant to the question asked
+    - If you cannot answer based on context or knowledge, respond with "I don't know"
+    - Respond naturally to greetings and casual conversation
+    - Use a friendly, professional tone
+    </guidelines>
     """
     rag_prompt = ChatPromptTemplate.from_template(rag_template)
     return (
@@ -147,7 +171,7 @@ def get_final_rag_pipeline(retrieval_chain: Any, llm: ChatOpenAI) -> RunnableSer
 
 
 # Streamlit UI
-st.title("Simple RAG System")
+st.title("Chat With Your Documents")
 
 # Initialize session state
 if "rag_chain" not in st.session_state:
@@ -157,21 +181,30 @@ if "messages" not in st.session_state:
 
 with st.sidebar:
     uploaded_file = st.file_uploader("Upload a PDF file", type=["pdf"])
-
     if uploaded_file:
         # Save uploaded file temporarily
         with open(f"temp_{uploaded_file.name}", "wb") as f:
             f.write(uploaded_file.read())
 
-        # Process the document
-        with st.spinner("Processing document..."):
-            splits = get_document_splits(f"temp_{uploaded_file.name}")
-            generate_queries = get_rag_fusion_generator(llm=llm)
-            retriever = get_vector_store(splits, "demo_collection")
-            retrieval_chain_rag_fusion = generate_queries | retriever.map() | reciprocal_rank_fusion
-            st.session_state.rag_chain = get_final_rag_pipeline(retrieval_chain_rag_fusion, llm=llm)
+        with st.form(key="rag_form", clear_on_submit=True):
+            collection_name = st.text_input("Collection Name", value="demo")
+            submit_button = st.form_submit_button("Create Collection")
 
-        st.success(f"Successfully processed {len(splits)} document chunks!")
+            if submit_button:
+                # Process the document
+                with st.spinner("Processing document..."):
+                    splits = get_document_splits(f"temp_{uploaded_file.name}")
+                    generate_queries = get_rag_fusion_generator(llm=llm)
+                    # Create or fetch collection
+                    retriever = get_vector_store(splits, collection_name)
+                    retrieval_chain_rag_fusion = generate_queries | retriever.map() | reciprocal_rank_fusion
+                    st.session_state.rag_chain = get_final_rag_pipeline(retrieval_chain_rag_fusion, llm=llm)
+                    st.success(
+                        f"Collection '{collection_name}' created successfully and processed {len(splits)} document chunks!"
+                    )
+
+    else:
+        st.warning("Please create a collection first!")
 
 # Display chat messages from history on app rerun
 for message in st.session_state.messages:

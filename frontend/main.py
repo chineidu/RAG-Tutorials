@@ -1,6 +1,7 @@
 # uvr -m streamlit run frontend/main.py
 
-
+import os
+import tempfile
 from operator import itemgetter
 from typing import Any, Generator
 from uuid import uuid4
@@ -23,9 +24,9 @@ from model_config import LocalModel, RemoteModel
 from settings import refresh_settings
 
 settings = refresh_settings()
-# openai/gpt-oss-120b
-model_str_remote: str = RemoteModel.KIMI_K2
+model_str_remote: str = RemoteModel.GEMINI_2_0_FLASH_001
 model_str_local: str = LocalModel.MISTRAL_7B_INSTRUCT_V0_3_Q4_0
+
 
 # Deterministic responses
 remote_llm = ChatOpenAI(
@@ -43,6 +44,20 @@ local_llm = ChatOpenAI(
 )
 
 llm = remote_llm
+
+
+def get_uploaded_filepath(uploaded_file: Any) -> str:
+    """Get the file path of the uploaded PDF."""
+    # Create a temporary file to save the uploaded PDF
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
+        tmp_file.write(uploaded_file.read())
+    return tmp_file.name
+
+
+def remove_uploaded_file(file_path: str) -> None:
+    """Remove the uploaded file from the filesystem."""
+    if file_path is not None:
+        os.unlink(file_path)
 
 
 def get_document_splits(filepath: str) -> list[Any]:
@@ -94,26 +109,34 @@ def get_rag_fusion_generator(llm: ChatOpenAI) -> RunnableSerializable[dict, Any]
     """Generate RAG fusion queries."""
     template = """
     <system>
-    <role>
-    You are a helpful assistant that generates multiple search queries based on a single input query.
-    </role>
+        <role>
+        You are a helpful query reconstructor that generates multiple search queries based on a 
+        single input query to improve document retrieval.
+        </role>
 
-    <instructions>
-    Generate a max of 3 search queries related to the question
-    <question>{question}</question>
-    </instructions>
+        <instructions>
+        Generate exactly 3 distinct search queries that would help find relevant information for the given question.
+        
+        Original question: {question}
+        
+        Your search queries should:
+        - Be specific and use actual entities/terms from the original question
+        - NOT use placeholders. Use the actual entities mentioned
+        - Cover different angles or phrasings of the same information need
+        - Be suitable for semantic search in documents
+        - The generated queries should be on a new line
+        </instructions>
 
-    <outputs>
-    Output:
-    </outputs>
-
+        <outputs>
+        Output:
+        </outputs>
     </system>
     """
     prompt_rag_fusion = ChatPromptTemplate.from_template(template)
     return prompt_rag_fusion | llm | StrOutputParser() | (lambda x: x.strip().split("\n"))
 
 
-def reciprocal_rank_fusion(results: list[list], k: int = 60) -> list[tuple[Any, Any]]:
+def reciprocal_rank_fusion(results: list[list], k: int = 60, num_results: int = 4) -> list[tuple[Any, Any]]:
     """
     Apply Reciprocal Rank Fusion (RRF) to combine multiple ranked document lists.
     """
@@ -133,11 +156,37 @@ def reciprocal_rank_fusion(results: list[list], k: int = 60) -> list[tuple[Any, 
             fused_scores[doc_str] += 1 / (rank + k)
 
     # Sort the documents based on their fused scores in descending order to get the final reranked results
-    return [(loads(doc), score) for doc, score in sorted(fused_scores.items(), key=lambda x: x[1], reverse=True)]
+    sorted_docs = [(loads(doc), score) for doc, score in sorted(fused_scores.items(), key=lambda x: x[1], reverse=True)]
+    return sorted_docs[:num_results]
 
 
-def get_final_rag_pipeline(retrieval_chain: Any, llm: ChatOpenAI) -> RunnableSerializable[dict, Any]:
-    """Generate the final RAG pipeline."""
+def extract_context_and_metadata(
+    docs_with_scores: list[tuple[Any, float]],
+) -> dict[str, Any]:
+    """Extract both context and metadata from RAG fusion output."""
+    docs = [doc for doc, _ in docs_with_scores]
+    context = "\n\n".join(
+        f"(content: {doc.page_content}\nsource: {doc.metadata['source']}\npage_label: {doc.metadata['page_label']})"
+        for doc in docs
+    )
+    result = list({(doc.metadata["source"], doc.metadata["page_label"]) for doc in docs})
+    metadata = [{"source": row[0], "page_label": row[1]} for row in result]
+    return {"context": context, "metadata": metadata}
+
+
+def combine_with_question(inputs: dict[str, Any]) -> dict[str, Any]:
+    """Combine retrieval results with the original question."""
+    question = inputs["question"]
+    retrieval_results = inputs["retrieval_results"]
+    return {
+        "question": question,
+        "context": retrieval_results["context"],
+        "metadata": retrieval_results["metadata"],
+    }
+
+
+def get_final_rag_pipeline(retrieval_chain: Any, llm_model: Any) -> tuple[RunnableSerializable, RunnableSerializable]:
+    """Generate the final RAG pipeline with streaming support."""
     # RAG Prompt
     rag_template: str = """
     <instructions>
@@ -160,13 +209,15 @@ def get_final_rag_pipeline(retrieval_chain: Any, llm: ChatOpenAI) -> RunnableSer
     </guidelines>
     """
     rag_prompt = ChatPromptTemplate.from_template(rag_template)
+
     return (
         {
             "context": retrieval_chain,
             "question": itemgetter("question"),
         }
         | rag_prompt
-        | llm
+        | llm_model
+        | StrOutputParser()
     )
 
 
@@ -182,9 +233,7 @@ if "messages" not in st.session_state:
 with st.sidebar:
     uploaded_file = st.file_uploader("Upload a PDF file", type=["pdf"])
     if uploaded_file:
-        # Save uploaded file temporarily
-        with open(f"temp_{uploaded_file.name}", "wb") as f:
-            f.write(uploaded_file.read())
+        tmp_file_path = get_uploaded_filepath(uploaded_file)
 
         with st.form(key="rag_form", clear_on_submit=True):
             collection_name = st.text_input("Collection Name", value="demo")
@@ -193,15 +242,17 @@ with st.sidebar:
             if submit_button:
                 # Process the document
                 with st.spinner("Processing document..."):
-                    splits = get_document_splits(f"temp_{uploaded_file.name}")
+                    splits = get_document_splits(tmp_file_path)
                     generate_queries = get_rag_fusion_generator(llm=llm)
                     # Create or fetch collection
                     retriever = get_vector_store(splits, collection_name)
                     retrieval_chain_rag_fusion = generate_queries | retriever.map() | reciprocal_rank_fusion
-                    st.session_state.rag_chain = get_final_rag_pipeline(retrieval_chain_rag_fusion, llm=llm)
+                    st.session_state.rag_chain = get_final_rag_pipeline(retrieval_chain_rag_fusion, llm_model=llm)
                     st.success(
                         f"Collection '{collection_name}' created successfully and processed {len(splits)} document chunks!"
                     )
+                    # Remove temporary file
+                    remove_uploaded_file(tmp_file_path)
 
     else:
         st.warning("Please create a collection first!")
@@ -213,7 +264,7 @@ for message in st.session_state.messages:
 
 # Accept user input
 if prompt := st.chat_input("What's on your mind?"):
-    if st.session_state.rag_chain is None:
+    if "rag_chain" not in st.session_state or st.session_state.rag_chain is None:
         st.warning("Please upload a PDF file first!")
     else:
         # Add user message to chat history
@@ -224,18 +275,16 @@ if prompt := st.chat_input("What's on your mind?"):
 
         # Display assistant response in chat message container
         with st.chat_message("assistant"):
+            with st.spinner("Thinking..."):
 
-            def response_generator() -> Generator[Any | str, Any, None]:
-                """Generate response chunks from the RAG chain."""
-                for chunk in st.session_state.rag_chain.stream({"question": prompt}):
-                    if hasattr(chunk, "content"):
-                        yield chunk.content
-                    elif isinstance(chunk, str):
-                        yield chunk
-                    else:
-                        yield str(chunk)
+                def response_generator() -> Generator[str, Any, None]:
+                    """Generate response chunks from the RAG chain."""
+                    # Stream the LLM response
+                    for chunk in st.session_state.rag_chain.stream({"question": prompt}):
+                        if chunk:  # Only yield non-empty chunks
+                            yield chunk
 
-            response = st.write_stream(response_generator())
+                response = st.write_stream(response_generator())
 
         # Add assistant response to chat history
         st.session_state.messages.append({"role": "assistant", "content": response})

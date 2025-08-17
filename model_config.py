@@ -42,5 +42,6 @@ class RemoteModel(str, Enum):
 
     # Tool Use
     Z_AI_GLM_4_5 = "z-ai/glm-4.5"
+    QWEN3_30B_A3B = "qwen/qwen3-30b-a3b"
     MISTRAL_DEVSTRAL_SMALL = "mistralai/devstral-small"
     MISTRAL_SMALL_3_2_24B_INSTRUCT = "mistralai/mistral-small-3.2-24b-instruct"

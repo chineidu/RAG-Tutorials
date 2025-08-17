@@ -29,9 +29,16 @@ class BaseSettingsConfig(BaseSettings):
 class Settings(BaseSettingsConfig):
     """Application settings class containing database and other credentials."""
 
+    # ===== LOCAL INFERENCE =====
     # OLLAMA
     OLLAMA_API_KEY: SecretStr = SecretStr("")
     OLLAMA_URL: str = "http://localhost:11434/v1"
+
+    # LMSTUDIO
+    LMSTUDIO_API_KEY: SecretStr = SecretStr("")
+    LMSTUDIO_URL: str = "http://localhost:1234/v1"
+
+    # ===== REMOTE INFERENCE =====
     # GROQ
     GROQ_API_KEY: SecretStr = SecretStr("")
 

@@ -48,9 +48,3 @@ dev = [
     "requests-mock>=1.12.1",
     "ruff>=0.12.5",
 ]
-
-[tool.pyrefly]
-project-includes = ["src"]
-project-excludes = ["**/.[!/.]*", "**/*venv/**"]
-ignore-missing-source = true
-

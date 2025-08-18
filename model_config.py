@@ -18,7 +18,6 @@ class LocalModel(str, Enum):
     QWEN3_1_7B = "qwen3-1.7b"
     QWEN3_4B = "qwen3:4b"
     QWEN3_4B_INSTRUCT_2507 = "qwen3-4b-instruct-2507"
-    DEEPSEEK_R1_0528_QWEN3_8B = "deepseek-r1-0528-qwen3-8b"
     MXBAI_EMBED_LARGE = "mxbai-embed-large:latest"
 
 

@@ -15,7 +15,10 @@ class LocalModel(str, Enum):
     MISTRAL_7B_INSTRUCT_V0_3_Q4_0 = "mistral:7b-instruct-v0.3-q4_0"
     LLAMA3_1_8B = "llama3.1:8b"
     LLAMA3_2_3B = "llama3.2:3b"
+    QWEN3_1_7B = "qwen3-1.7b"
     QWEN3_4B = "qwen3:4b"
+    QWEN3_4B_INSTRUCT_2507 = "qwen3-4b-instruct-2507"
+    DEEPSEEK_R1_0528_QWEN3_8B = "deepseek-r1-0528-qwen3-8b"
     MXBAI_EMBED_LARGE = "mxbai-embed-large:latest"
 
 

@@ -1,0 +1,89 @@
+use_default_settings: true
+
+general:
+  debug: false
+  instance_name: "SearXNG"
+  privacypolicy_url: false
+  donation_url: false
+  contact_url: false
+  enable_metrics: false
+
+search:
+  safe_search: 0
+  autocomplete: ""
+  default_lang: "en"
+  formats:
+    - html
+    - json
+
+server:
+  port: 8080
+  bind_address: "0.0.0.0"
+  secret_key: "change_this_secret_key_in_production"
+  base_url: http://localhost:8080/
+  image_proxy: false
+  http_protocol_version: "1.0"
+  method: "GET"
+  default_http_headers:
+    X-Content-Type-Options: nosniff
+    X-XSS-Protection: 1; mode=block
+    X-Download-Options: noopen
+    X-Robots-Tag: noindex, nofollow
+    Referrer-Policy: no-referrer
+
+ui:
+  static_use_hash: false
+  default_locale: ""
+  query_in_title: false
+  infinite_scroll: false
+  center_alignment: false
+  cache_url: undef
+  search_on_category_select: true
+  hotkeys: default
+
+# Use valkey instead of redis (deprecated)
+valkey:
+  url: redis://redis:6379/0
+
+outgoing:
+  request_timeout: 8.0
+  max_request_timeout: 12.0
+  useragent_suffix: ""
+  pool_connections: 100
+  pool_maxsize: 10
+  enable_http2: true
+  retries: 1
+  retry_on_http_error: [408, 429, 500, 502, 503, 504]
+  using_tor_proxy: false
+
+# Simplified engine configuration - remove problematic engines
+engines:
+  - name: bing
+    engine: bing
+    shortcut: bi
+    categories: general
+    disabled: false
+    timeout: 8.0
+
+  - name: google
+    engine: google
+    shortcut: go
+    categories: general
+    disabled: false
+    use_mobile_ui: false
+    timeout: 8.0
+
+  - name: brave
+    engine: brave
+    shortcut: br
+    categories: general
+    disabled: false
+    timeout: 8.0
+
+  # Disable problematic engines
+  - name: duckduckgo
+    disabled: true
+  - name: startpage
+    disabled: true
+  - name: searx
+    disabled: true

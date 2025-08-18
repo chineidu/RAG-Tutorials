@@ -65,6 +65,9 @@ class Settings(BaseSettingsConfig):
     # GOOGLE SERP
     SERPER_API_KEY: SecretStr = SecretStr("")
 
+    # EXA
+    EXA_API_KEY: SecretStr = SecretStr("")
+
     # ===== OBSERVABILITY =====
     # LANGFUSE
     LANGFUSE_SECRET_KEY: SecretStr = SecretStr("")

@@ -1,0 +1,12 @@
+[botdetection.ip_limit]
+# Enable rate limiting
+filter_link_local = false
+link_token = false
+
+[botdetection.ip_lists]
+pass_searxng_org = false
+pass_ip = []
+block_ip = []
+
+[real_ip]
+x_for = 1

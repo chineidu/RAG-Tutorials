@@ -16,6 +16,8 @@ from .settings import refresh_settings
 settings = refresh_settings()
 
 CHARS_PER_TOKEN: int = 4
+MAX_TOKENS_PER_SOURCE: int = 1_000
+
 
 class SearchAPI(str, Enum):
     SEARXNG: str = "searxng"
@@ -28,6 +30,7 @@ class SearchAPI(str, Enum):
         Return the string representation of the object.
         """
         return str(self.value)
+
 
 # utils.py
 def strip_thinking_tokens(text: str) -> str:
@@ -265,7 +268,7 @@ def searxng_search(query: str, max_results: int = 3, fetch_full_page: bool = Fal
         return {"results": []}
 
 
-def exa_search(query: str, num_results: int = 3) -> dict[str, list[dict[str, Any]]]:
+def exa_search(query: str, max_results: int = 3, fetch_full_page: bool = False) -> dict[str, list[dict[str, Any]]]:  # noqa: ARG001
     """
     Perform a web search using the ExaSearchResults tool.
 
@@ -273,8 +276,10 @@ def exa_search(query: str, num_results: int = 3) -> dict[str, list[dict[str, Any
     ----------
     query : str
         The search query string.
-    num_results : int, optional
+    max_results : int, optional
         Maximum number of results to return (default is 3).
+    fetch_full_page : bool, optional
+        If True, fetch and include the full page content for each result (default is False).
 
     Returns
     -------
@@ -292,13 +297,13 @@ def exa_search(query: str, num_results: int = 3) -> dict[str, list[dict[str, Any
     """
     character_limit: int = 1_500
     # Initialize the ExaSearchResults tool
-    search_tool = ExaSearchResults(exa_api_key=settings.EXA_API_KEY.get_secret_value()) # type: ignore
+    search_tool = ExaSearchResults(exa_api_key=settings.EXA_API_KEY.get_secret_value())  # type: ignore
 
     try:
         # Perform a search query
         search_results = search_tool._run(  # noqa: SLF001
             query=query,
-            num_results=num_results,
+            num_results=max_results,
             text_contents_options=True,
             highlights=True,
         )
@@ -318,7 +323,7 @@ def exa_search(query: str, num_results: int = 3) -> dict[str, list[dict[str, Any
         return {"results": []}
 
 
-def tavily_search(query: str, max_results: int = 3) -> dict[str, list[dict[str, Any]]]:
+def tavily_search(query: str, max_results: int = 3, fetch_full_page: bool = False) -> dict[str, list[dict[str, Any]]]:  # noqa: ARG001
     """
     Perform a web search using the TavilySearch tool.
 
@@ -328,6 +333,8 @@ def tavily_search(query: str, max_results: int = 3) -> dict[str, list[dict[str, 
         The search query string.
     max_results : int, optional
         Maximum number of results to return (default is 3).
+    fetch_full_page : bool, optional
+        If True, fetch and include the full page content for each result (default is False).
 
     Returns
     -------

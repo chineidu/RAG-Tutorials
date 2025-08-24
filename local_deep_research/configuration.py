@@ -1,18 +1,10 @@
 import os
-from enum import Enum
 from typing import Any, Literal
 
 from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
 from model_config import LocalModel
-
-
-class SearchAPI(Enum):
-    PERPLEXITY = "perplexity"
-    TAVILY = "tavily"
-    DUCKDUCKGO = "duckduckgo"
-    SEARXNG = "searxng"
 
 
 class Configuration(BaseModel):

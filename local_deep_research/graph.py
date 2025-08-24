@@ -2,14 +2,36 @@ import json
 from typing import Any, Type, TypeVar
 
 from langchain_core.messages import AnyMessage, HumanMessage, SystemMessage
+from langchain_core.runnables import RunnableConfig
+from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-from .configuration import Configuration, SearchAPI
+from .configuration import Configuration
 from .graph_states import SummaryState
 from .model_config import LocalModel
+from .prompts import (
+    get_current_date,
+    json_mode_query_prompt,
+    json_mode_reflection_prompt,
+    query_writer_prompt,
+    reflection_prompt,
+    summarizer_prompt,
+    tool_calling_query_prompt,
+    tool_calling_reflection_prompt,
+)
 from .settings import refresh_settings
-from .utils import strip_thinking_tokens
+from .utils import (
+    MAX_TOKENS_PER_SOURCE,
+    SearchAPI,
+    deduplicate_and_format_sources,
+    exa_search,
+    format_sources,
+    google_search,
+    searxng_search,
+    strip_thinking_tokens,
+    tavily_search,
+)
 
 settings = refresh_settings()
 T = TypeVar("T", bound=BaseModel)
@@ -98,7 +120,7 @@ def generate_search_query_with_structured_output(
         llm = get_llm(configurable)
         result = llm.invoke(messages)
         print(f"result: {result}")
-        content: str = result.content # type: ignore
+        content: str = result.content  # type: ignore
 
         try:
             parsed_json: dict[str, Any] = json.loads(content)
@@ -171,6 +193,24 @@ def generate_query(state: SummaryState, config: RunnableConfig) -> dict[str, Any
 
 # Select the search type from the config, run the query and return the formatted search results
 def web_research(state: SummaryState, config: RunnableConfig) -> dict[str, Any]:
+    """
+    LangGraph node that performs web research using the generated search query.
+
+    Executes a web search using the configured search API (tavily, perplexity,
+    duckduckgo, or searxng) and formats the results for further processing.
+
+    Parameters
+    ----------
+    state : SummaryState
+        The current summary state containing the search query and research loop count
+    config : RunnableConfig
+        Configuration for the runnable, including search API settings
+
+    Returns
+    -------
+    dict[str, Any]
+        Dictionary with state update, including sources_gathered, research_loop_count, and web_research_results
+    """
     configurable = Configuration.from_runnable_config(config)
     search_api = configurable.search_api
 
@@ -236,6 +276,25 @@ def web_research(state: SummaryState, config: RunnableConfig) -> dict[str, Any]:
 
 
 def summarize_sources(state: SummaryState, config: RunnableConfig) -> Any:
+    """
+    LangGraph node that summarizes web research results.
+
+    Uses an LLM to create or update a running summary based on the newest web research
+    results, integrating them with any existing summary.
+
+    Parameters
+    ----------
+    state : SummaryState
+        The current summary state containing the research topic, running summary,
+        and web research results
+    config : RunnableConfig
+        Configuration for the runnable, including LLM provider settings
+
+    Returns
+    -------
+    dict[str, Any]
+        Dictionary with state update, including running_summary key containing the updated summary
+    """
     existing_summary = state.existing_summary
     most_recent_web_search = state.web_research_results[-1]
 
@@ -253,7 +312,7 @@ def summarize_sources(state: SummaryState, config: RunnableConfig) -> Any:
         create a summary
         """
 
-    configurable = configuration.from_runnable_config(config)
+    configurable = Configuration.from_runnable_config(config)
     if configurable.llm_provider == "llmstudio":
         llm: ChatOpenAI = ChatOpenAI(
             base_url=settings.LMSTUDIO_URL,  # type: ignore
@@ -268,7 +327,7 @@ def summarize_sources(state: SummaryState, config: RunnableConfig) -> Any:
         )
 
     result = llm.invoke([SystemMessage(content=summarizer_prompt), HumanMessage(content=human_msg_content)])
-    existing_summary: str = result.content
+    existing_summary: str = result.content  # type: ignore
     if configurable.strip_thinking_tokens:
         existing_summary = strip_thinking_tokens(existing_summary)
 
@@ -276,8 +335,20 @@ def summarize_sources(state: SummaryState, config: RunnableConfig) -> Any:
 
 
 def reflect_on_summary(state: SummaryState, config: RunnableConfig) -> dict[str, Any]:
-    # Get the required objects(llm, prompts, etc)
-    # Generate a query
+    """
+    LangGraph node that identifies knowledge gaps and generates follow-up queries.
+
+    Analyzes the current summary to identify areas for further research and generates
+    a new search query to address those gaps. Uses structured output to extract
+    the follow-up query in JSON format.
+
+    Args:
+        state: Current graph state containing the running summary and research topic
+        config: Configuration for the runnable, including LLM provider settings
+
+    Returns:
+        Dictionary with state update, including search_query key containing the generated follow-up query
+    """
     configurable = Configuration.from_runnable_config(config)
     formatted_prompt = reflection_prompt.format(research_topic=state.research_topic)
 
@@ -299,3 +370,31 @@ def reflect_on_summary(state: SummaryState, config: RunnableConfig) -> dict[str,
         tool_query_field="follow_up_query",
         json_query_field="follow_up_query",
     )
+
+def finalize_summary(state: SummaryState) -> dict[str, Any]:
+    """
+    Parameters
+    ----------
+    state : SummaryState
+        The current summary state containing the research topic, running summary,
+        and web research results.
+
+    Returns
+    -------
+    dict[str, Any]
+        Dictionary with state update, including existing_summary key containing the updated summary
+    """
+    seen_sources: set = set()
+    unique_sources: list[str] = []
+
+    for src in state.sources_gathered:
+        for line in src.split("\n"):
+            # Process non-empty lines
+            if line.strip() and line not in seen_sources:
+                seen_sources.add(line)
+                unique_sources.append(line)
+
+    all_sources: str = "\n".join(unique_sources)
+    state.existing_summary = f"## Summary:\n{state.existing_summary}\n\n### Sources: \n{all_sources}"
+
+    return {"existing_summary": state.existing_summary}

@@ -61,24 +61,12 @@ def get_llm(configurable: Configuration) -> ChatOpenAI:
         Configured LLM instance
     """
     if configurable.llm_provider == "lmstudio":
-        if configurable.use_tool_calling:
-            return ChatOpenAI(
-                base_url=settings.LMSTUDIO_URL,  # type: ignore
-                model=LocalModel.MISTRAL_7B_INSTRUCT_V0_3_Q4_0,  # type: ignore
-                temperature=0,
-            )
         return ChatOpenAI(
-            base_url=settings.LMSTUDIO_UR,  # type: ignore
+            base_url=settings.LMSTUDIO_URL,  # type: ignore
             model=LocalModel.MISTRAL_7B_INSTRUCT_V0_3_Q4_0,  # type: ignore
             temperature=0,
         )
     # Default to Ollama
-    if configurable.use_tool_calling:
-        return ChatOpenAI(
-            base_url=settings.OLLAMA_URL,  # type: ignore
-            model=LocalModel.MISTRAL_7B_INSTRUCT_V0_3_Q4_0,  # type: ignore
-            temperature=0,
-        )
     return ChatOpenAI(
         base_url=settings.OLLAMA_URL,  # type: ignore
         model=LocalModel.MISTRAL_7B_INSTRUCT_V0_3_Q4_0,  # type: ignore

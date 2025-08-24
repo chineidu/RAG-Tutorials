@@ -315,12 +315,14 @@ def summarize_sources(state: SummaryState, config: RunnableConfig) -> Any:
     configurable = Configuration.from_runnable_config(config)
     if configurable.llm_provider == "llmstudio":
         llm: ChatOpenAI = ChatOpenAI(
+            api_key="empty",
             base_url=settings.LMSTUDIO_URL,  # type: ignore
             model=LocalModel.MISTRAL_7B_INSTRUCT_V0_3_Q4_0,  # type: ignore
             temperature=0,
         )
     else:
         llm = ChatOpenAI(
+            api_key="empty",  # type: ignore
             base_url=settings.OLLAMA_URL,  # type: ignore
             model=LocalModel.MISTRAL_7B_INSTRUCT_V0_3_Q4_0,  # type: ignore
             temperature=0,
@@ -370,6 +372,7 @@ def reflect_on_summary(state: SummaryState, config: RunnableConfig) -> dict[str,
         tool_query_field="follow_up_query",
         json_query_field="follow_up_query",
     )
+
 
 def finalize_summary(state: SummaryState) -> dict[str, Any]:
     """

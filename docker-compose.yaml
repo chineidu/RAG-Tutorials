@@ -38,11 +38,15 @@ services:
     environment:
       - SEARXNG_BASE_URL=http://localhost:8080/
       - SEARXNG_FORMATS=json,html
+      - SEARXNG_LOGGING_LEVEL=ERROR # Reduce logging verbosity
+
     logging:
       driver: "json-file"
       options:
         max-size: "1m"
         max-file: "1"
+        # Reduce log level
+        tag: "searxng"
 
 networks:
   searxng:

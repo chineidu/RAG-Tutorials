@@ -8,5 +8,8 @@ pass_searxng_org = false
 pass_ip = []
 block_ip = []
 
-[real_ip]
-x_for = 1
+[botdetection]
+# trusted_proxies expects a list of IP addresses/ranges of trusted proxies
+# For Docker/local development, you can use an empty list or specify your proxy IPs
+# ["172.16.0.0/12"] for Docker
+trusted_proxies = ["172.16.0.0/12"]

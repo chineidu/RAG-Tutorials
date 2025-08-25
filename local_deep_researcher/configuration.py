@@ -4,7 +4,7 @@ from typing import Any, Literal
 from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 
-from model_config import LocalModel
+from local_deep_researcher.model_config import LocalModel
 
 
 class Configuration(BaseModel):

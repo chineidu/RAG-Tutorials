@@ -9,9 +9,9 @@ from langchain_openai import ChatOpenAI
 from langchain_tavily import TavilySearch
 from markdownify import markdownify
 
-from .configuration import Configuration
-from .model_config import LocalModel
-from .settings import refresh_settings
+from local_deep_researcher.configuration import Configuration
+from local_deep_researcher.model_config import LocalModel, RemoteModel
+from local_deep_researcher.settings import refresh_settings
 
 settings = refresh_settings()
 
@@ -64,15 +64,21 @@ def get_llm(configurable: Configuration) -> ChatOpenAI:
         Configured LLM instance
     """
     if configurable.llm_provider == "lmstudio":
+        # return ChatOpenAI(
+        #     api_key="empty",# type: ignore
+        #     base_url=settings.LMSTUDIO_URL,  # type: ignore
+        #     model=LocalModel.MISTRAL_7B_INSTRUCT_V0_3_Q4_0,  # type: ignore
+        #     temperature=0,
+        # )
         return ChatOpenAI(
-            api_key="empty",# type: ignore
-            base_url=settings.LMSTUDIO_URL,  # type: ignore
-            model=LocalModel.MISTRAL_7B_INSTRUCT_V0_3_Q4_0,  # type: ignore
-            temperature=0,
+            api_key=settings.OPENROUTER_API_KEY.get_secret_value(),  # type: ignore
+            base_url=settings.OPENROUTER_URL,# type: ignore
+            temperature=0.0,
+            model=RemoteModel.GPT_OSS_120B,  # type: ignore
         )
     # Default to Ollama
     return ChatOpenAI(
-        api_key="empty", # type: ignore
+        api_key="empty",  # type: ignore
         base_url=settings.OLLAMA_URL,  # type: ignore
         model=LocalModel.MISTRAL_7B_INSTRUCT_V0_3_Q4_0,  # type: ignore
         temperature=0,
@@ -156,9 +162,9 @@ def deduplicate_and_format_sources(
     # Format output
     formatted_text: str = "Sources:\n\n"
     for src in unique_sources.values():
-        title = src.get("title", "<no title>")
-        url = src.get("url", "<no url>")
-        content = src.get("content", "")
+        title: str = src.get("title", "<no title>")
+        url: str = src.get("url", "<no url>")
+        content: str = src.get("content", "")
         formatted_text += f"Source: {title}\n==\n"
         formatted_text += f"URL: {url}\n==\n"
         formatted_text += f"Most relevant content from source: : {content}\n==\n"

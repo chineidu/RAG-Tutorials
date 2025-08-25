@@ -1,16 +1,17 @@
 import json
-from typing import Any, Type, TypeVar
+from typing import Any, Literal, Type, TypeVar
 
 from langchain_core.messages import AnyMessage, HumanMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
+from langgraph.graph import END, START, StateGraph
 from pydantic import BaseModel, Field
 
-from .configuration import Configuration
-from .graph_states import SummaryState
-from .model_config import LocalModel
-from .prompts import (
+from local_deep_researcher.configuration import Configuration
+from local_deep_researcher.graph_states import SummaryState, SummaryStateInput, SummaryStateOutput
+from local_deep_researcher.model_config import LocalModel
+from local_deep_researcher.prompts import (
     get_current_date,
     json_mode_query_prompt,
     json_mode_reflection_prompt,
@@ -20,13 +21,14 @@ from .prompts import (
     tool_calling_query_prompt,
     tool_calling_reflection_prompt,
 )
-from .settings import refresh_settings
-from .utils import (
+from local_deep_researcher.settings import refresh_settings
+from local_deep_researcher.utils import (
     MAX_TOKENS_PER_SOURCE,
     SearchAPI,
     deduplicate_and_format_sources,
     exa_search,
     format_sources,
+    get_llm,
     google_search,
     searxng_search,
     strip_thinking_tokens,
@@ -36,30 +38,6 @@ from .utils import (
 settings = refresh_settings()
 T = TypeVar("T", bound=BaseModel)
 
-
-def get_llm(configurable: Configuration) -> ChatOpenAI:
-    """Helper function to initialize LLM based on configuration.
-
-    Uses JSON mode if use_tool_calling is False, otherwise regular mode for tool calling.
-
-    Args:
-        configurable: Configuration object containing LLM settings
-
-    Returns:
-        Configured LLM instance
-    """
-    if configurable.llm_provider == "lmstudio":
-        return ChatOpenAI(
-            base_url=settings.LMSTUDIO_URL,  # type: ignore
-            model=LocalModel.MISTRAL_7B_INSTRUCT_V0_3_Q4_0,  # type: ignore
-            temperature=0,
-        )
-    # Default to Ollama
-    return ChatOpenAI(
-        base_url=settings.OLLAMA_URL,  # type: ignore
-        model=LocalModel.MISTRAL_7B_INSTRUCT_V0_3_Q4_0,  # type: ignore
-        temperature=0,
-    )
 
 
 def generate_search_query_with_structured_output(
@@ -191,7 +169,6 @@ def generate_query(state: SummaryState, config: RunnableConfig) -> dict[str, Any
     )
 
 
-# Select the search type from the config, run the query and return the formatted search results
 def web_research(state: SummaryState, config: RunnableConfig) -> dict[str, Any]:
     """
     LangGraph node that performs web research using the generated search query.
@@ -270,11 +247,6 @@ def web_research(state: SummaryState, config: RunnableConfig) -> dict[str, Any]:
     }
 
 
-# - if an existing_summary exist, combine it with the most recent summary and return the combined summary
-# - if no existing_summary exists, return the most recent summary
-# -create an instance of the llm and call it with the combined summary
-
-
 def summarize_sources(state: SummaryState, config: RunnableConfig) -> Any:
     """
     LangGraph node that summarizes web research results.
@@ -314,12 +286,13 @@ def summarize_sources(state: SummaryState, config: RunnableConfig) -> Any:
 
     configurable = Configuration.from_runnable_config(config)
     if configurable.llm_provider == "llmstudio":
-        llm: ChatOpenAI = ChatOpenAI(
-            api_key="empty",
-            base_url=settings.LMSTUDIO_URL,  # type: ignore
-            model=LocalModel.MISTRAL_7B_INSTRUCT_V0_3_Q4_0,  # type: ignore
-            temperature=0,
-        )
+        # llm: ChatOpenAI = ChatOpenAI(
+        #     api_key="empty",
+        #     base_url=settings.LMSTUDIO_URL,  # type: ignore
+        #     model=LocalModel.MISTRAL_7B_INSTRUCT_V0_3_Q4_0,  # type: ignore
+        #     temperature=0,
+        # )
+        llm: ChatOpenAI = get_llm(configurable)
     else:
         llm = ChatOpenAI(
             api_key="empty",  # type: ignore
@@ -401,3 +374,52 @@ def finalize_summary(state: SummaryState) -> dict[str, Any]:
     state.existing_summary = f"## Summary:\n{state.existing_summary}\n\n### Sources: \n{all_sources}"
 
     return {"existing_summary": state.existing_summary}
+
+
+def route_research(state: SummaryState, config: RunnableConfig) -> Literal["finalize_summary", "web_research"]:
+    """
+    Route the research process based on the current research loop count.
+
+    Parameters
+    ----------
+    state : SummaryState
+        The current summary state containing the research loop count.
+    config : RunnableConfig
+        Configuration for the research process, including maximum allowed research loops.
+
+    Returns
+    -------
+    Literal["finalize_summary", "web_research"]
+        Returns "web_research" if the research loop count is less than or equal to the maximum allowed loops,
+        otherwise returns "finalize_summary".
+    """
+    configurable = Configuration.from_runnable_config(config)
+    if state.research_loop_count <= configurable.max_web_research_loops:
+        return "web_research"
+    return "finalize_summary"
+
+
+builder = StateGraph(
+    state_schema=SummaryState,
+    input_schema=SummaryStateInput,
+    output_schema=SummaryStateOutput,
+    config_schema=Configuration,
+)
+
+# Nodes
+builder.add_node(generate_query, "generate_query")  # type: ignore
+builder.add_node(web_research, "web_research")  # type: ignore
+builder.add_node(summarize_sources, "summarize_sources")  # type: ignore
+builder.add_node(reflect_on_summary, "reflect_on_summary")  # type: ignore
+builder.add_node(finalize_summary, "finalize_summary")  # type: ignore
+
+# Edges
+builder.add_edge(START, "generate_query")
+builder.add_edge("generate_query", "web_research")
+builder.add_edge("web_research", "summarize_sources")
+builder.add_edge("summarize_sources", "reflect_on_summary")
+builder.add_conditional_edges("reflect_on_summary", route_research)
+builder.add_edge("finalize_summary", END)
+
+# Build
+research_graph = builder.compile()

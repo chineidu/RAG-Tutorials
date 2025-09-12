@@ -64,12 +64,13 @@ def get_llm(configurable: Configuration) -> ChatOpenAI:
         Configured LLM instance
     """
     if configurable.llm_provider == "lmstudio":
-        # return ChatOpenAI(
-        #     api_key="empty",# type: ignore
-        #     base_url=settings.LMSTUDIO_URL,  # type: ignore
-        #     model=LocalModel.MISTRAL_7B_INSTRUCT_V0_3_Q4_0,  # type: ignore
-        #     temperature=0,
-        # )
+        return ChatOpenAI(
+            api_key="empty",# type: ignore
+            base_url=settings.LMSTUDIO_URL,  # type: ignore
+            model=LocalModel.MISTRAL_7B_INSTRUCT_V0_3_Q4_0,  # type: ignore
+            temperature=0,
+        )
+    if configurable.llm_provider == "remote":
         return ChatOpenAI(
             api_key=settings.OPENROUTER_API_KEY.get_secret_value(),  # type: ignore
             base_url=settings.OPENROUTER_URL,# type: ignore

@@ -20,7 +20,7 @@ class Configuration(BaseModel):
         title="LLM Model Name",
         description="Name of the LLM model to use",
     )
-    llm_provider: Literal["ollama", "lmstudio"] = Field(
+    llm_provider: Literal["ollama", "lmstudio", "remote"] = Field(
         default="lmstudio",
         title="LLM Provider",
         description="Provider for the LLM (Ollama or LMStudio)",

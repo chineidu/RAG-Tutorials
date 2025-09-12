@@ -71,8 +71,9 @@ It conducts deep, iterative web and document searches to produce detailed, cited
 # Copy the example environment file
 cp .env.example .env
 
-# Launch LangGraph Server
-uvx --refresh --from "langgraph-cli[inmem]" --with-editable . --python 3.12 langgraph dev
+# RECOMMENDED
+uv pip install --editable . "langgraph-cli[inmem]"
+langgraph dev
 ```
 
 - TBD

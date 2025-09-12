@@ -29,6 +29,12 @@ class BaseSettingsConfig(BaseSettings):
 class Settings(BaseSettingsConfig):
     """Application settings class containing database and other credentials."""
 
+    # ===== APP CONFIGURATION =====
+    LLM_PROVIDER: str = "lmstudio"  # Options: 'ollama', 'lmstudio', 'remote'
+    MAX_WEB_RESEARCH_LOOPS: int = 3
+    SEARCH_API: str = "tavily"  # Options: 'tavily', 'serper'
+    FETCH_FULL_PAGE: bool = True
+
     # ===== LOCAL INFERENCE =====
     # OLLAMA
     OLLAMA_API_KEY: SecretStr = SecretStr("")

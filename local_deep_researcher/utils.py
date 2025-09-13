@@ -75,7 +75,7 @@ def get_llm(configurable: Configuration) -> ChatOpenAI:
             api_key=settings.OPENROUTER_API_KEY.get_secret_value(),  # type: ignore
             base_url=settings.OPENROUTER_URL,# type: ignore
             temperature=0.0,
-            model=RemoteModel.GPT_OSS_120B,  # type: ignore
+            model=RemoteModel.GEMINI_2_0_FLASH_001,  # type: ignore
         )
     # Default to Ollama
     return ChatOpenAI(

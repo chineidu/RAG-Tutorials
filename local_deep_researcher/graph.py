@@ -39,7 +39,6 @@ settings = refresh_settings()
 T = TypeVar("T", bound=BaseModel)
 
 
-
 def generate_search_query_with_structured_output(
     configurable: Configuration,
     messages: list,
@@ -399,27 +398,28 @@ def route_research(state: SummaryState, config: RunnableConfig) -> Literal["fina
     return "finalize_summary"
 
 
-builder = StateGraph(
-    state_schema=SummaryState,
-    input_schema=SummaryStateInput,
-    output_schema=SummaryStateOutput,
-    config_schema=Configuration,
-)
+if "__main__" == __name__:
+    builder = StateGraph(
+        state_schema=SummaryState,
+        input_schema=SummaryStateInput,
+        output_schema=SummaryStateOutput,
+        config_schema=Configuration,
+    )
 
-# Nodes
-builder.add_node(generate_query, "generate_query")  # type: ignore
-builder.add_node(web_research, "web_research")  # type: ignore
-builder.add_node(summarize_sources, "summarize_sources")  # type: ignore
-builder.add_node(reflect_on_summary, "reflect_on_summary")  # type: ignore
-builder.add_node(finalize_summary, "finalize_summary")  # type: ignore
+    # Nodes
+    builder.add_node(generate_query, "generate_query")  # type: ignore
+    builder.add_node(web_research, "web_research")  # type: ignore
+    builder.add_node(summarize_sources, "summarize_sources")  # type: ignore
+    builder.add_node(reflect_on_summary, "reflect_on_summary")  # type: ignore
+    builder.add_node(finalize_summary, "finalize_summary")  # type: ignore
 
-# Edges
-builder.add_edge(START, "generate_query")
-builder.add_edge("generate_query", "web_research")
-builder.add_edge("web_research", "summarize_sources")
-builder.add_edge("summarize_sources", "reflect_on_summary")
-builder.add_conditional_edges("reflect_on_summary", route_research)
-builder.add_edge("finalize_summary", END)
+    # Edges
+    builder.add_edge(START, "generate_query")
+    builder.add_edge("generate_query", "web_research")
+    builder.add_edge("web_research", "summarize_sources")
+    builder.add_edge("summarize_sources", "reflect_on_summary")
+    builder.add_conditional_edges("reflect_on_summary", route_research)
+    builder.add_edge("finalize_summary", END)
 
-# Build
-research_graph = builder.compile()
+    # Build
+    research_graph = builder.compile()

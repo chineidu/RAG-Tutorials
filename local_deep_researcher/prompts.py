@@ -64,7 +64,7 @@ tool_calling_query_prompt: str = """
 
 summarizer_prompt: str = """
 <GOAL>
-Generate a high-quality summary of the provided context.
+Generate a high-quality summary of maximum of 8 sentences of the provided context.
 </GOAL>
 
 <REQUIREMENTS>
@@ -94,17 +94,32 @@ Generate a high-quality summary of the provided context.
 
 reflection_prompt: str = """
 <ROLE>
-    You are an expert research assistant analyzing a summary about {research_topic}.
-    </ROLE>
+You are an expert research assistant analyzing a summary about {research_topic}.
+</ROLE>
 
-    <GOAL>
-    - Identify knowledge gaps or areas that need deeper exploration
-    - Generate a follow-up question that would help expand your understanding
-    - Focus on technical details, implementation specifics, or emerging trends that weren't fully covered
+<GOAL>
+Your task is to identify knowledge gaps and generate one targeted follow-up question that would significantly expand 
+understanding of the topic.
+
+For biographies specifically, prioritize these areas:
+- Formative experiences and lesser-known influences that shaped their worldview
+- Pivotal moments or decisions that altered their life trajectory
+- Personal relationships and their impact on major works/achievements
+- Unresolved controversies, debates, or mysteries surrounding their life
+- Cultural, social, or historical context that influenced their work/impact
+
+For other topics, focus on:
+- Technical implementation details or mechanisms not fully explained
+- Emerging developments, recent discoveries, or evolving perspectives
+- Practical applications or real-world implications
+- Comparative analysis with related concepts or competing theories
 </GOAL>
 
 <REQUIREMENTS>
-    Ensure the follow-up question is self-contained and includes necessary context for web search.
+- Generate exactly one specific, researchable question
+- Make the question self-contained with sufficient context for effective web searching
+- Avoid overly broad questions; focus on specific, actionable gaps in knowledge
+- Frame questions to uncover concrete information rather than general overviews
 </REQUIREMENTS>
 """
 

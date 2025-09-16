@@ -208,4 +208,7 @@ __marimo__/
 
 # Custom ignore patterns
 **/**/note.*
+**/**/.vscode/
 **/**/.langgraph_api/
+**/**/*.db*
+

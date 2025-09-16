@@ -23,9 +23,9 @@ class Configuration(BaseModel):
     llm_provider: Literal["ollama", "lmstudio", "remote"] = Field(
         default="lmstudio",
         title="LLM Provider",
-        description="Provider for the LLM (Ollama or LMStudio)",
+        description="Provider for the LLM (Ollama, LMStudio or Remote API)",
     )
-    search_api: Literal["tavily", "searxng", "google_serper", "exa"] = Field(
+    search_api: Literal["tavily", "searxng", "google", "exa"] = Field(
         default="searxng", title="Search API", description="Web search API to use"
     )
     fetch_full_page: bool = Field(
@@ -74,7 +74,7 @@ class Configuration(BaseModel):
             `Configuration.model_fields` are considered; any entries with value ``None``
             are filtered out before instantiation.
         """
-        configurable = config["configurable"] if config and "configurable" in config else {}
+        configurable: dict[str, Any] = config["configurable"] if config and "configurable" in config else {}
 
         # Get raw values from environment or config
         raw_values: dict[str, Any] = {
@@ -82,6 +82,6 @@ class Configuration(BaseModel):
         }
 
         # Filter out None values
-        values = {k: v for k, v in raw_values.items() if v is not None}
+        values: dict[str, Any] = {k: v for k, v in raw_values.items() if v is not None}
 
         return cls(**values)

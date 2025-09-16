@@ -64,6 +64,7 @@ def get_llm(configurable: Configuration) -> ChatOpenAI:
         Configured LLM instance
     """
     if configurable.llm_provider == "lmstudio":
+        print("Using LMStudio LLM")
         return ChatOpenAI(
             api_key="empty",# type: ignore
             base_url=settings.LMSTUDIO_URL,  # type: ignore
@@ -71,13 +72,15 @@ def get_llm(configurable: Configuration) -> ChatOpenAI:
             temperature=0,
         )
     if configurable.llm_provider == "remote":
+        print("Using Remote LLM")
         return ChatOpenAI(
             api_key=settings.OPENROUTER_API_KEY.get_secret_value(),  # type: ignore
             base_url=settings.OPENROUTER_URL,# type: ignore
             temperature=0.0,
-            model=RemoteModel.GEMINI_2_0_FLASH_001,  # type: ignore
+            model=RemoteModel.GPT_5_NANO,  # type: ignore
         )
     # Default to Ollama
+    print("Using Ollama LLM")
     return ChatOpenAI(
         api_key="empty",  # type: ignore
         base_url=settings.OLLAMA_URL,  # type: ignore

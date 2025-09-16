@@ -1,7 +1,7 @@
 import json
 from typing import Any, Literal, Type, TypeVar
 
-from langchain_core.messages import AnyMessage, HumanMessage, SystemMessage
+from langchain_core.messages import AnyMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
@@ -10,7 +10,6 @@ from pydantic import BaseModel, Field
 
 from local_deep_researcher.configuration import Configuration
 from local_deep_researcher.graph_states import SummaryState, SummaryStateInput, SummaryStateOutput
-from local_deep_researcher.model_config import LocalModel
 from local_deep_researcher.prompts import (
     get_current_date,
     json_mode_query_prompt,
@@ -284,23 +283,8 @@ def summarize_sources(state: SummaryState, config: RunnableConfig) -> Any:
         """
 
     configurable = Configuration.from_runnable_config(config)
-    if configurable.llm_provider == "llmstudio":
-        # llm: ChatOpenAI = ChatOpenAI(
-        #     api_key="empty",
-        #     base_url=settings.LMSTUDIO_URL,  # type: ignore
-        #     model=LocalModel.MISTRAL_7B_INSTRUCT_V0_3_Q4_0,  # type: ignore
-        #     temperature=0,
-        # )
-        llm: ChatOpenAI = get_llm(configurable)
-    else:
-        llm = ChatOpenAI(
-            api_key="empty",  # type: ignore
-            base_url=settings.OLLAMA_URL,  # type: ignore
-            model=LocalModel.MISTRAL_7B_INSTRUCT_V0_3_Q4_0,  # type: ignore
-            temperature=0,
-        )
-
-    result = llm.invoke([SystemMessage(content=summarizer_prompt), HumanMessage(content=human_msg_content)])
+    llm: ChatOpenAI = get_llm(configurable)
+    result: BaseMessage = llm.invoke([SystemMessage(content=summarizer_prompt), HumanMessage(content=human_msg_content)])
     existing_summary: str = result.content  # type: ignore
     if configurable.strip_thinking_tokens:
         existing_summary = strip_thinking_tokens(existing_summary)
@@ -310,19 +294,25 @@ def summarize_sources(state: SummaryState, config: RunnableConfig) -> Any:
 
 def reflect_on_summary(state: SummaryState, config: RunnableConfig) -> dict[str, Any]:
     """
-    LangGraph node that identifies knowledge gaps and generates follow-up queries.
+    Generate a structured follow-up query or reflection.
 
-    Analyzes the current summary to identify areas for further research and generates
-    a new search query to address those gaps. Uses structured output to extract
-    the follow-up query in JSON format.
+    Parameters
+    ----------
+    state : SummaryState
+        The current state of the summary, including the research topic
+        and existing summary content.
+    config : RunnableConfig
+        Configuration settings that determine how the reflection
+        process is executed, including whether to use tool-calling
+        or JSON-based prompts.
 
-    Args:
-        state: Current graph state containing the running summary and research topic
-        config: Configuration for the runnable, including LLM provider settings
-
-    Returns:
-        Dictionary with state update, including search_query key containing the generated follow-up query
+    Returns
+    -------
+    dict[str, Any]
+        A dictionary containing the generated follow-up query or reflection
+        output, structured according to the specified tool or JSON schema.
     """
+
     configurable = Configuration.from_runnable_config(config)
     formatted_prompt = reflection_prompt.format(research_topic=state.research_topic)
 
@@ -331,11 +321,15 @@ def reflect_on_summary(state: SummaryState, config: RunnableConfig) -> dict[str,
         follow_up_query: str = Field(description="A specific question to address the knowledge gap")
         knowledge_gap: str = Field(description="Describe what information is missing or needs clarification")
 
-    messages: list[AnyMessage] = [
-        SystemMessage(content=formatted_prompt) + tool_calling_reflection_prompt
+    summary: str = "<SUMMARY>\n" + state.existing_summary + "\n</SUMMARY>"
+    system_content = formatted_prompt + (
+        tool_calling_reflection_prompt
         if configurable.use_tool_calling
-        else json_mode_reflection_prompt,
-    ]
+        else json_mode_reflection_prompt + summary
+    )
+
+    messages: list[AnyMessage] = [SystemMessage(content=system_content)]
+    
     return generate_search_query_with_structured_output(
         configurable=configurable,
         messages=messages,
@@ -398,28 +392,29 @@ def route_research(state: SummaryState, config: RunnableConfig) -> Literal["fina
     return "finalize_summary"
 
 
-if "__main__" == __name__:
-    builder = StateGraph(
-        state_schema=SummaryState,
-        input_schema=SummaryStateInput,
-        output_schema=SummaryStateOutput,
-        config_schema=Configuration,
-    )
+# if "__main__" == __name__:
 
-    # Nodes
-    builder.add_node(generate_query, "generate_query")  # type: ignore
-    builder.add_node(web_research, "web_research")  # type: ignore
-    builder.add_node(summarize_sources, "summarize_sources")  # type: ignore
-    builder.add_node(reflect_on_summary, "reflect_on_summary")  # type: ignore
-    builder.add_node(finalize_summary, "finalize_summary")  # type: ignore
+builder = StateGraph(
+    state_schema=SummaryState,
+    input_schema=SummaryStateInput,
+    output_schema=SummaryStateOutput,
+    config_schema=Configuration,
+)
 
-    # Edges
-    builder.add_edge(START, "generate_query")
-    builder.add_edge("generate_query", "web_research")
-    builder.add_edge("web_research", "summarize_sources")
-    builder.add_edge("summarize_sources", "reflect_on_summary")
-    builder.add_conditional_edges("reflect_on_summary", route_research)
-    builder.add_edge("finalize_summary", END)
+# Nodes
+builder.add_node(generate_query, "generate_query")  # type: ignore
+builder.add_node(web_research, "web_research")  # type: ignore
+builder.add_node(summarize_sources, "summarize_sources")  # type: ignore
+builder.add_node(reflect_on_summary, "reflect_on_summary")  # type: ignore
+builder.add_node(finalize_summary, "finalize_summary")  # type: ignore
 
-    # Build
-    research_graph = builder.compile()
+# Edges
+builder.add_edge(START, "generate_query")
+builder.add_edge("generate_query", "web_research")
+builder.add_edge("web_research", "summarize_sources")
+builder.add_edge("summarize_sources", "reflect_on_summary")
+builder.add_conditional_edges("reflect_on_summary", route_research)
+builder.add_edge("finalize_summary", END)
+
+# Build
+research_graph = builder.compile()

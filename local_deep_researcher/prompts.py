@@ -103,10 +103,8 @@ understanding of the topic.
 
 For biographies specifically, prioritize these areas:
 - Formative experiences and lesser-known influences that shaped their worldview
-- Pivotal moments or decisions that altered their life trajectory
 - Personal relationships and their impact on major works/achievements
 - Unresolved controversies, debates, or mysteries surrounding their life
-- Cultural, social, or historical context that influenced their work/impact
 
 For other topics, focus on:
 - Technical implementation details or mechanisms not fully explained

@@ -48,12 +48,17 @@ async def ainvoke(user_input: UserInput) -> dict[str, str | Any]:
         user_id: str = user_input_dict["thread_id"]
         config: dict[str, Any] = {"configurable": {"thread_id": user_id}}
         agent: CompiledStateGraph | None = get_agent(user_input.agent_id)
-        
-        response = await agent.ainvoke(  # type: ignore
-            {"research_topic": user_input.topic}, config=config
-        )
-        return {"user_id": user_id, "response": response}
-    
+
+        responses: list[dict[str, Any]] = [
+            event
+            async for event in agent.astream(  # type: ignore
+                {"research_topic": user_input.topic},
+                config=config,
+            )
+        ]
+        final_response = responses[-1].get("finalize_summary").get("existing_summary")
+        return {"user_id": user_id, "response": final_response}
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 

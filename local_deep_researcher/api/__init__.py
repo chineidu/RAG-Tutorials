@@ -128,7 +128,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # noqa: ARG001
                 await store.setup() # type: ignore
 
             # Configure agents with both memory components
-            # agents = get_all_agent_info()
             for a in agents:
                 agent: CompiledStateGraph | None = get_agent(a["id"])
                 if agent is None:

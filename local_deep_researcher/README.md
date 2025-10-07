@@ -2,6 +2,8 @@
 
 # Local Deep Research Project
 
+- Inspired by [LangGraph's Local Deep Research](https://github.com/langchain-ai/local-deep-researcher/tree/main).
+
 ## Table of Contents
 
 - [Overview](#overview)
@@ -9,7 +11,6 @@
 - [Directory Structure](#directory-structure)
 - [Getting Started](#getting-started)
 - [Usage](#usage)
-- [Contributing](#contributing)
 - [License](#license)
 
 ## Overview
@@ -30,7 +31,7 @@ It conducts deep, iterative web and document searches to produce detailed, cited
 - **Custom Configuration:** Easily adapt settings for different research scenarios.
 - **Prompt Engineering:** Centralized prompt management for consistent LLM interactions.
 - **Utility Functions:** Helper utilities for data processing and workflow automation.
-- **Docker Support:** Containerized deployment for reproducibility and scalability.
+- **Docker Support:** Containerized deployment for easy setup and scalability.
 
 ## Directory Structure
 
@@ -55,6 +56,7 @@ It conducts deep, iterative web and document searches to produce detailed, cited
 2. **Configure your environment:**
    - Edit `local_deep_research/configuration.py` and `settings.py` as needed.
 3. **Run with Docker:**
+   - This will set up the necessary services.
 
    ```sh
    docker-compose up

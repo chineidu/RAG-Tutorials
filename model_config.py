@@ -39,6 +39,8 @@ class RemoteModel(str, Enum):
     LLAMA_3_8B_INSTRUCT = "meta-llama/llama-3-8b-instruct"
     MISTRAL_7B_INSTRUCT_V0_3 = "mistralai/mistral-7b-instruct-v0.3"
     NOUS_RESEARCH_HERMES_2_PRO_LLAMA_3_8B = "nousresearch/hermes-2-pro-llama-3-8b"
+    X_AI_GROK_4_FAST = "x-ai/grok-4-fast"
+    X_AI_GROK_CODE_FAST_1 = "x-ai/grok-code-fast-1"
     Z_AI_GLM_4_5_AIR_FREE = "z-ai/glm-4.5-air:free"
     MISTRAL_SMALL_3_2_24B_INSTRUCT_FREE = "mistralai/mistral-small-3.2-24b-instruct:free"
 
@@ -47,3 +49,4 @@ class RemoteModel(str, Enum):
     QWEN3_30B_A3B = "qwen/qwen3-30b-a3b"
     MISTRAL_DEVSTRAL_SMALL = "mistralai/devstral-small"
     MISTRAL_SMALL_3_2_24B_INSTRUCT = "mistralai/mistral-small-3.2-24b-instruct"
+    QWEN3_NEXT_80B_A3B_INSTRUCT = "qwen/qwen3-next-80b-a3b-instruct"

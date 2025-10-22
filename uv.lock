@@ -1056,6 +1056,18 @@ grpc = [
 ]
 
 [[package]]
+name = "grandalf"
+version = "0.8"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pyparsing" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/95/0e/4ac934b416857969f9135dec17ac80660634327e003a870835dd1f382659/grandalf-0.8.tar.gz", hash = "sha256:2813f7aab87f0d20f334a3162ccfbcbf085977134a17a5b516940a93a77ea974", size = 38128, upload-time = "2023-01-26T07:37:06.668Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/61/30/44c7eb0a952478dbb5f2f67df806686d6a7e4b19f6204e091c4f49dc7c69/grandalf-0.8-py3-none-any.whl", hash = "sha256:793ca254442f4a79252ea9ff1ab998e852c1e071b863593e5383afee906b4185", size = 41802, upload-time = "2023-01-10T15:16:19.753Z" },
+]
+
+[[package]]
 name = "greenlet"
 version = "3.2.3"
 source = { registry = "https://pypi.org/simple" }
@@ -3677,6 +3689,7 @@ dependencies = [
     { name = "arxiv" },
     { name = "fastapi" },
     { name = "google-search-results" },
+    { name = "grandalf" },
     { name = "instructor" },
     { name = "langchain-community" },
     { name = "langchain-core" },
@@ -3729,6 +3742,7 @@ requires-dist = [
     { name = "arxiv", specifier = ">=2.2.0" },
     { name = "fastapi", specifier = ">=0.116.1" },
     { name = "google-search-results", specifier = ">=2.4.2" },
+    { name = "grandalf", specifier = ">=0.8" },
     { name = "instructor", specifier = ">=1.11.3" },
     { name = "langchain-community", specifier = ">=0.3.27" },
     { name = "langchain-core", specifier = ">=0.3.72" },

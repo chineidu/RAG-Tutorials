@@ -32,19 +32,16 @@ class RemoteModel(str, Enum):
 
     GEMINI_2_0_FLASH_001 = "google/gemini-2.0-flash-001"
     GEMINI_2_5_FLASH = "google/gemini-2.5-flash"
-    KIMI_K2 = "moonshotai/kimi-k2"
+    DEEPSEEK_CHAT_V3_0324 = "deepseek/deepseek-chat-v3-0324"
     GPT_OSS_120B = "openai/gpt-oss-120b"
+    GPT_OSS_20B = "openai/gpt-oss-20b"
     LLAMA_3_3_70B_INSTRUCT = "meta-llama/llama-3.3-70b-instruct"
     GPT_5_NANO = "openai/gpt-5-nano"
     NEMOTRON_NANO_9B_V2 = "nvidia/nemotron-nano-9b-v2"
     X_AI_GROK_4_FAST = "x-ai/grok-4-fast"
     X_AI_GROK_CODE_FAST_1 = "x-ai/grok-code-fast-1"
-    Z_AI_GLM_4_5_AIR_FREE = "z-ai/glm-4.5-air:free"
-    MISTRAL_SMALL_3_2_24B_INSTRUCT_FREE = "mistralai/mistral-small-3.2-24b-instruct:free"
 
     # Tool Use
     Z_AI_GLM_4_5 = "z-ai/glm-4.5"
     QWEN3_30B_A3B = "qwen/qwen3-30b-a3b"
-    MISTRAL_DEVSTRAL_SMALL = "mistralai/devstral-small"
-    MISTRAL_SMALL_3_2_24B_INSTRUCT = "mistralai/mistral-small-3.2-24b-instruct"
     QWEN3_NEXT_80B_A3B_INSTRUCT = "qwen/qwen3-next-80b-a3b-instruct"

@@ -3688,6 +3688,7 @@ source = { editable = "." }
 dependencies = [
     { name = "aiosqlite" },
     { name = "arxiv" },
+    { name = "beautifulsoup4" },
     { name = "fastapi" },
     { name = "google-search-results" },
     { name = "grandalf" },
@@ -3742,6 +3743,7 @@ dev = [
 requires-dist = [
     { name = "aiosqlite", specifier = ">=0.21.0" },
     { name = "arxiv", specifier = ">=2.2.0" },
+    { name = "beautifulsoup4", specifier = ">=4.13.4" },
     { name = "fastapi", specifier = ">=0.116.1" },
     { name = "google-search-results", specifier = ">=2.4.2" },
     { name = "grandalf", specifier = ">=0.8" },

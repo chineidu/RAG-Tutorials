@@ -211,4 +211,4 @@ __marimo__/
 **/**/.vscode/
 **/**/.langgraph_api/
 **/**/*.db*
-
+**/**/.DS_Store
